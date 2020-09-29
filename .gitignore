@@ -2,8 +2,8 @@
 *.out
 *.txt
 */main
+.vscode
 
 # problems to be solved
 1561
 1562
-1071

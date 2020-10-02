@@ -198,19 +198,18 @@ template <typename T>
 T
 distance_between(std::vector<Road<T>> &area_1, std::vector<Road<T>> &area_2)
 {
-    std::vector<T> shortest_distances;
-    shortest_distances.reserve(area_1.size() * area_2.size());
+    // init distance
+    T distance = distance_between(area_1.at(0), area_2.at(0));
 
     for (auto &road_1 : area_1)
     {
         for (auto &road_2 : area_2)
         {
-            T distance = distance_between(road_1, road_2);
-            shortest_distances.push_back(distance);
+            distance = std::min(distance, distance_between(road_1, road_2));
         }
     }
 
-    return *std::min_element(shortest_distances.begin(), shortest_distances.end());
+    return distance;
 }
 
 template <typename T>

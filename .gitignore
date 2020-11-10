@@ -1,10 +1,11 @@
 *.o
 *.out
 *.txt
-*/main
+**/main
 .vscode
 
 # problems to be solved
 1561
 1562
+2305
 13264

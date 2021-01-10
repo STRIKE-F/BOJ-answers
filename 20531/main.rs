@@ -18,15 +18,16 @@ fn stirling(n: usize, k: usize, table: &mut Vec<Vec<Option<IntType>>>) -> IntTyp
 
 fn create_stirling_table(set_num: usize) -> Vec<Vec<Option<IntType>>> {
     // create half-square table for size and performance optimization
-    let mut table: Vec<Vec<Option<IntType>>> = (0..set_num+1)
+    let mut table: Vec<Vec<Option<IntType>>> = (0..=set_num)
         .map(|n| {
             match n {
                 0 => vec![Some(1), Some(0)],
                 1 => vec![Some(0), Some(1), Some(0)],
                 _ => {
-                    let mut row = vec![Some(0), Some(1)];
-                    row.reserve(n);
-                    (0..n.checked_sub(2).unwrap_or(0)).for_each(|_| row.push(None));
+                    let mut row = Vec::with_capacity(n+2);
+                    row.push(Some(0));
+                    row.push(Some(1));
+                    (0..n-2).for_each(|_| row.push(None));
                     row.push(Some(1));
                     row.push(Some(0));
                     row

@@ -6,26 +6,11 @@ use std::cmp::Ordering;
 type IndType = i8;
 type OffType = u8;
 
+#[derive(PartialEq)]
 enum OffsetKind {
     Positive,
     Zero,
     Negative,
-}
-
-impl PartialEq for OffsetKind {
-    fn eq(&self, other: &Self) -> bool {
-        let lhs = match self {
-            Self::Positive => 1,
-            Self::Zero => 0,
-            Self::Negative => -1,
-        };
-        let rhs = match other {
-            Self::Positive => 1,
-            Self::Zero => 0,
-            Self::Negative => -1,
-        };
-        lhs == rhs
-    }
 }
 
 fn align(offsets: &mut Vec<OffType>, until: OffType) -> u32 {
@@ -50,77 +35,46 @@ fn align(offsets: &mut Vec<OffType>, until: OffType) -> u32 {
 fn minimum_edits(offsets: Vec<IndType>) -> u32 {
     let mut edits = 0;
     let mut monotonic_offsets: Vec<OffType> = Vec::new();
-    let mut offset_kind = OffsetKind::Zero;
+    let mut prev_offset = OffsetKind::Zero;
     for offset in offsets.iter() {
-        match offset.cmp(&0) {
-            // negative offset
-            Ordering::Less => {
-                let offset = offset.abs() as OffType;
-                match offset_kind {
-                    OffsetKind::Positive => {
-                        edits += align(&mut monotonic_offsets, 0);
-                        offset_kind = OffsetKind::Negative;
-                        monotonic_offsets.clear();
-                        monotonic_offsets.push(offset);
-                    },
-                    OffsetKind::Negative => {
-                        match monotonic_offsets.last().unwrap().cmp(&offset) {
-                            Ordering::Less => monotonic_offsets.push(offset),
-                            Ordering::Equal => (),
-                            Ordering::Greater => {
-                                edits += align(&mut monotonic_offsets, offset);
-                                monotonic_offsets.push(offset)
-                            }
+        let current_offset = match offset.cmp(&0) {
+            Ordering::Less => OffsetKind::Negative,
+            Ordering::Equal => OffsetKind::Zero,
+            Ordering::Greater => OffsetKind::Positive,
+        };
+
+        if current_offset == OffsetKind::Zero { 
+            if prev_offset != OffsetKind::Zero {
+                prev_offset = OffsetKind::Zero;
+                edits += align(&mut monotonic_offsets, 0);
+                monotonic_offsets.clear();
+            }
+        } else {
+            let offset = offset.abs() as OffType;
+            if prev_offset == OffsetKind::Zero {
+                prev_offset = current_offset;
+                monotonic_offsets.push(offset);
+            } else {
+                if prev_offset == current_offset {
+                    match monotonic_offsets.last().unwrap().cmp(&offset) {
+                        Ordering::Less => monotonic_offsets.push(offset),
+                        Ordering::Equal => (),
+                        Ordering::Greater => {
+                            edits += align(&mut monotonic_offsets, offset);
+                            monotonic_offsets.push(offset)
                         }
-                    },
-                    OffsetKind::Zero => {
-                        offset_kind = OffsetKind::Negative;
-                        monotonic_offsets.push(offset);
                     }
-                }
-            },
-            // positive offset
-            Ordering::Greater => {
-                let offset = *offset as OffType;
-                match offset_kind {
-                    OffsetKind::Positive => {
-                        match monotonic_offsets.last().unwrap().cmp(&offset) {
-                            Ordering::Less => monotonic_offsets.push(offset),
-                            Ordering::Equal => (),
-                            Ordering::Greater => {
-                                edits += align(&mut monotonic_offsets, offset);
-                                monotonic_offsets.push(offset)
-                            }
-                        }
-                    },
-                    OffsetKind::Negative => {
-                        edits += align(&mut monotonic_offsets, 0);
-                        offset_kind = OffsetKind::Positive;
-                        monotonic_offsets.clear();
-                        monotonic_offsets.push(offset);
-                    },
-                    OffsetKind::Zero => {
-                        offset_kind = OffsetKind::Positive;
-                        monotonic_offsets.push(offset);
-                    }
-                }
-            },
-            // zero offset
-            Ordering::Equal => {
-                match offset_kind {
-                    OffsetKind::Positive | OffsetKind::Negative => {
-                        edits += align(&mut monotonic_offsets, 0);
-                        offset_kind = OffsetKind::Zero;
-                        monotonic_offsets.clear();
-                    },
-                    OffsetKind::Zero => ()
+                } else {
+                    prev_offset = current_offset;
+                    edits += align(&mut monotonic_offsets, 0);
+                    monotonic_offsets.clear();
+                    monotonic_offsets.push(offset);
                 }
             }
         }
     }
-
     // end-of-line(?) cleanup
-    match offset_kind {
+    match prev_offset {
         OffsetKind::Positive | OffsetKind::Negative => {
             edits += align(&mut monotonic_offsets, 0);
         },

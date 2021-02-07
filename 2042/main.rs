@@ -109,19 +109,22 @@ impl SegmentTree {
             }
             Query::Reduce(reduce) => {
                 fn sum_range(node: &mut SegmentNode, query_range: Range<usize>) -> i64 {
+                    let left_ref = node.left.as_ref().unwrap();
+                    let right_ref = node.right.as_ref().unwrap();
+
                     if node.range.start == query_range.start && node.range.end == query_range.end {
                         // query range is of exact match with this node
                         node.sum
-                    } else if query_range.end <= node.left.as_ref().unwrap().range.end {
+                    } else if query_range.end <= left_ref.range.end {
                         // query range is entirely included in left node
                         sum_range(node.left.as_mut().unwrap(), query_range)
-                    } else if node.right.as_ref().unwrap().range.start <= query_range.start {
+                    } else if right_ref.range.start <= query_range.start {
                         // query range is entirely included in right node
                         sum_range(node.right.as_mut().unwrap(), query_range)
                     } else {
                         // query range is across both nodes
-                        let left_range = query_range.start..node.left.as_ref().unwrap().range.end;
-                        let right_range = node.right.as_ref().unwrap().range.start..query_range.end;
+                        let left_range = query_range.start..left_ref.range.end;
+                        let right_range = right_ref.range.start..query_range.end;
                         sum_range(node.left.as_mut().unwrap(), left_range)
                             + sum_range(node.right.as_mut().unwrap(), right_range)
                     }
